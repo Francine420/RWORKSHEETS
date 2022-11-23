@@ -1,0 +1,50 @@
+install.packages("dplyr")
+library(dplyr)
+library(tidyverse)
+
+#1.
+  #1.a
+    Respondents <- c(seq(1,20))
+    Sex <- c(2,2,1,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1,2)    
+    Father_Occupation <- c(1,3,3,3,1,2,3,1,1,1,3,2,1,3,3,1,3,1,2,1)    
+    Persons_Home <- c(5,7,3,8,5,9,6,7,8,4,7,5,4,7,8,8,3,11,7,6)    
+    Siblings_School <- c(6,4,4,1,2,1,5,3,1,2,3,2,5,5,2,1,2,5,3,2)    
+    Type_Houses <- c (1,2,3,1,1,3,3,1,2,3,2,3,2,2,3,3,3,3,3,2)    
+    
+    data_display <- data.frame(Respondents,Sex,Father_Occupation,Persons_Home,Siblings_School,Type_Houses)
+  #1.b
+    summary(data_display)
+    
+  #1.c
+    #Answer: No
+  
+  #1.d
+    data1 <- subset(data_display[1:2, 2:6, drop=FALSE])
+    data1
+    
+  #1.e
+    data2 <- subset(data_display[c(3,5), c(2,4)])
+    data2    
+
+  #1.f
+    data3 <- data_display[c(6)]
+    data3
+  
+  #1.g
+    data4 <- subset(data_display[c(3,11), c(2,3)])
+    data4    
+
+  #1.h
+    data5 <- subset(data_display[c(1:20), c(2:5)])
+    female <- data5[data_display$Siblings_School >= 5,]
+    female
+    
+#2.
+    df = data.frame(Ints=integer(),
+                    Doubles=double(), Characters=character(),
+                    Logicals=logical(),
+                    Factors=factor(),
+                    stringsAsFactors=FALSE)
+    print("Structure of the empty dataframe:")
+    print(str(df))
+    
