@@ -1,0 +1,173 @@
+---
+title: "Individual_Project_1"
+author: "Francine Camiña"
+date: "2022-12-10"
+output: html_document
+---
+
+```
+library(syuzhet)
+library(RColorBrewer)
+library(wordcloud)
+library(ggplot2)
+library(plotly)
+library(tm)
+library(tidytext)
+library(dplyr)
+library(magrittr)
+library(stringr)
+library(twitteR)
+
+# SETUP CREDENTIALS.
+API_KEY <- "HxECAhf2LeK53Qziw3Ld6EBH7"
+API_SECRET_KEY <- "93QfuaKE66C1q6F1YSl9D38UIdkpgqHb5BjnfRxwiF75rroKgY"
+ACCESS_TOKEN <-  "1599400989198409729-bOU0I1N7tfQNdKJw44paZO0AgOkhOl"
+ACCESS_SECRET <-  "4GK0nGO9r2yLyIFSfrX3jtcHmP4JmGsggMcVjKw8dHUia"
+
+setup_twitter_oauth(consumer_key = API_KEY,
+                    consumer_secret = API_SECRET_KEY,
+                    access_token = ACCESS_TOKEN,
+                    access_secret = ACCESS_SECRET)
+
+
+# EXTRACTING TWEETS.
+trending_Tweets <- searchTwitter("#wednesdaynetflix -filter:retweets", n=10000, 
+                                 lang="en", since="2022-12-1", 
+                                 until="2022-12-7", retryOnRateLimit = 120)
+trending_Tweets
+
+# CONVERTING LIST DATA TO DATA FRAME.
+TTweetsdf <- twListToDF(trending_Tweets)
+class(TTweetsdf)
+names(TTweetsdf)
+View(TTweetsdf)
+head(TTweetsdf)[1:5]
+head(TTweetsdf$text)[1:5]
+
+# SAVE DATA FRAME FILE.
+save(TTweetsdf,file = "TTweetsdf.Rdata")
+
+# LOAD DATA FRAME FILE.
+load(file = "TTweetsdf.Rdata")
+
+# SAVING FILE AS RDATA.
+save(TTweetsdf, file = "tweetsDF2.Rdata")
+
+# CHECKING FOR MISSING VALUES IN A DATA FRAME.
+sap_ply <- sapply(TTweetsdf, function(x) sum(is.na(x)))
+sap_ply
+
+# SUBSETTING USING THE dplyr() PACKAGE.
+TTweetsdf2 <- TTweetsdf %>%
+  select(screenName,text,created,statusSource)
+TTweetsdf2
+
+# GROUPING THE DATA CREATED. 
+TTweetsdf2 %>%  
+  group_by(1) %>%  
+  summarise(max = max(created), min = min(created))
+
+mutate1 <- TTweetsdf %>%  mutate(Created_At_Round = created %>% 
+                                   round(units = 'hours') %>% as.POSIXct())
+mutate1
+
+TTweetsdf2 %>% pull(created) %>% min() 
+TTweetsdf2 %>% pull(created) %>% max()
+
+# Plot on tweets by time using the library(plotly) and ggplot().
+plotting <- mutate1 %>% 
+  dplyr::count(Created_At_Round) %>% 
+  ggplot(mapping = aes(x = Created_At_Round, y = n)) +
+  theme_light() +
+  geom_line() +
+  xlab(label = 'Date') +
+  ylab(label = NULL) +
+  ggtitle(label = 'Number of Tweets per Hour')
+
+plotting %>% ggplotly()
+
+# ==============================================
+
+ggplot(data = TTweetsdf, aes(x = created)) +
+  geom_histogram(aes(fill = ..count..)) +
+  theme(legend.position = "right") +
+  xlab("Time") + ylab("Number of tweets") + 
+  scale_fill_gradient(low = "black", high = "gray")
+
+# PLOTTING STATUS SOURCE.
+StatusSource <- function(x) {
+  if(grepl(">Twitter for iPhone</a>", x)){
+    "iphone"
+  }else if(grepl(">Twitter for iPad</a>", x)){
+    "ipad"
+  }else if(grepl(">Twitter for Android</a>", x)){
+    "android"
+  } else if(grepl(">Twitter Web Client</a>", x)){
+    "Web"
+  } else if(grepl(">Twitter for Windows Phone</a>", x)){
+    "windows phone"
+  }else if(grepl(">dlvr.it</a>", x)){
+    "dlvr.it"
+  }else if(grepl(">IFTTT</a>", x)){
+    "ifttt"
+  }else if(grepl(">Facebook</a>", x)){  
+    "facebook"
+  }else {
+    "others"
+  }
+}
+
+
+TTweetsdf2$tweetSource = sapply(TTweetsdf$statusSource, StatusSource)
+
+tweet_appSource1 <- TTweetsdf2 %>% 
+  select(tweetSource) %>%
+  group_by(tweetSource) %>%
+  summarize(count=n()) %>%
+  arrange(desc(count))
+
+ggplot(TTweetsdf2[TTweetsdf2$tweetSource 
+                  != 'others',], aes(tweetSource, fill = tweetSource)) +
+  geom_bar() +
+  theme(legend.position="none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylab("Number of tweets") +
+  ggtitle("Tweets by Source")
+
+# ACCOUNTS WHICH TWEET ABOUT wednesdaynetflix.
+tweet_account <- TTweetsdf2 %>%
+  select(screenName) %>%
+  group_by(screenName) %>%
+  summarize(count=n()) %>%
+  arrange(desc(count)) 
+
+#CONVERT TO CORPUS
+namesCorpus <- Corpus(VectorSource(TTweetsdf$screenName))  
+class(TTweetsdf$screenName)
+
+class_data <- class(VectorSource(TTweetsdf$screenName))
+class_data
+
+str(namesCorpus)
+
+class(namesCorpus)
+
+nmCorpus <- namesCorpus
+nmCorpus
+
+# WORDCLOUD FOR SCREEN NAMES.
+pal1 <- brewer.pal(8, "Dark2")
+pal2 <- pal1[-(1:4)]
+set.seed(123)
+
+par(mar = c(0,0,0,0), mfrow = c(1,1))
+
+wordcloud(words = namesCorpus, scale=c(3,0.5),
+          max.words=10000,
+          random.order=FALSE,
+          rot.per=0.5,
+          use.r.layout=TRUE,
+          colors=pal1)
+
+```
